@@ -1,5 +1,9 @@
-## Referências
+## Referências Extras
 
+Dicas de UX para solicitar permissão de notificação
+https://developers.google.com/web/fundamentals/push-notifications/permission-ux?hl=pt-br
+
+## Referências
 
 Medium com explicação básica
 https://www.sentinelstand.com/article/handling-firebase-notification-messages-in-your-web-app
