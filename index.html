@@ -1,7 +1,6 @@
 <html>
 
 <head>
-    <!-- <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script> -->
     <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-messaging.js"></script>
     <script src="http://code.jquery.com/jquery-3.3.1.min.js"></script>
@@ -38,21 +37,13 @@
             messaging.getToken()
                 .then(function (currentToken) {
                     if (currentToken) {
-                        console.log(currentToken);
                         sendTokenToServer(currentToken);
-                        // updateUIForPushEnabled(currentToken);
                     } else {
-                        // Show permission request.
                         console.log('No Instance ID token available. Request permission to generate one.');
-                        // Show permission UI.
-                        // updateUIForPushPermissionRequired();
-                        // setTokenSentToServer(false);
                     }
                 })
                 .catch(function (err) {
                     console.log('An error occurred while retrieving token. ', err);
-                    // showToken('Error retrieving Instance ID token. ', err);
-                    // setTokenSentToServer(false);
                 });
         }
 
@@ -65,34 +56,51 @@
                     uuid: "TesteWeb666"
                 })
                 .done(data => {
-                    console.log(data);
+                    console.log('Token enviado ao servidor.');
                 });
         }
 
-        // Handle incoming messages. Called when:
-        // - a message is received while the app has focus
-        // - the user clicks on an app notification created by a sevice worker
-        //   `messaging.setBackgroundMessageHandler` handler.
-        messaging.onMessage(function (payload) {
-            console.log("Message received. Foreground: ", payload);
-            // ...
+        navigator.serviceWorker.addEventListener('message', event => {
 
-            const notificationTitle = payload.data.title;
-            const notificationOptions = {
-                data: Object.assign({}, payload.data),
-                tag: payload.data.notId,
-                body: payload.data.message,
-                icon: 'https://static.wixstatic.com/media/ce3118_d14b0993f9784b898868a00195eb7964~mv2.jpg/v1/fill/w_92,h_75,al_c,q_80,usm_0.66_1.00_0.01/ce3118_d14b0993f9784b898868a00195eb7964~mv2.webp'
-            };
-
-            var n = new Notification(notificationTitle, notificationOptions);
-            n.onclick = onNotClick;
+            if (event.data.type === 'notification') { // TEM QUE BATER COM O TIPO NO SW
+                resolveNotification(event.data.additionalData);
+            } else if (event.data.type === 'notificationClick') { // TEM QUE BATER COM O TIPO NO SW
+                resolveNotificationClick(event.data.additionalData);
+            }
         });
 
-        function onNotClick(event) {
-            console.log('On notification click: ', event);
-            event.target.close();
+        function resolveNotification(data) {
+            // FILTRO DE AÇÕES FICA AQUI
+            console.log('Filtro em background, sem clique', data);
         }
+
+        function resolveNotificationClick(data) {
+            // FILTRO DE AÇÕES DE CLIQUE FICA AQUI
+            console.log('Filtro pós clique', data);
+        }
+
+        // // Handle incoming messages in foreground
+        // messaging.onMessage(function (payload) {
+
+        //     console.log('recebeu mensagem em foreground.');
+        //     resolveNotification(payload.data);
+
+        //     if (payload.data.message || payload.data.title) {
+        //         const notificationTitle = payload.data.title || '';
+        //         const notificationOptions = {
+        //             data: Object.assign({}, payload.data),
+        //             tag: payload.data.notId,
+        //             body: payload.data.message || '',
+        //             icon: 'http://icons.iconarchive.com/icons/paomedia/small-n-flat/1024/sign-check-icon.png'
+        //         };
+
+        //         var n = new Notification(notificationTitle, notificationOptions);
+        //         n.onclick = (event) => {
+        //             event.target.close();
+        //             resolveNotificationClick(event.target.data);
+        //         };
+        //     }
+        // });
     </script>
 </head>
 

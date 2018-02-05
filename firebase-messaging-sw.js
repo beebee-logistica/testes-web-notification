@@ -14,34 +14,131 @@ firebase.initializeApp({
 // messages.
 const messaging = firebase.messaging();
 
-messaging.setBackgroundMessageHandler(function (payload) {
-    console.log('[firebase-messaging-sw.js] Received background message ', payload);
-    // Customize notification here
-    const notificationTitle = payload.data.title;
-    const notificationOptions = {
-        data: Object.assign({}, payload.data),
-        tag: payload.data.notId,
-        body: payload.data.message,
-        icon: 'https://static.wixstatic.com/media/ce3118_d14b0993f9784b898868a00195eb7964~mv2.jpg/v1/fill/w_92,h_75,al_c,q_80,usm_0.66_1.00_0.01/ce3118_d14b0993f9784b898868a00195eb7964~mv2.webp'
-    };
+self.addEventListener('push', function (event) {
+    if (event.data) {
+        const payload = event.data.json();
 
-    return self.registration.showNotification(notificationTitle, notificationOptions);
+        const promiseChain = Promise.all([sendBackgroundInfo(payload.data), sendNotification(payload)]);
+
+        event.waitUntil(promiseChain);
+    } else {
+        console.log('This push event has no data.');
+    }
 });
 
 self.addEventListener('notificationclick', function (event) {
-    console.log('On notification click: ', event);
+
     event.notification.close();
-
-    // Client.focus();
-
-    // // This looks to see if the current is already open and
-    // // focuses if it is
-    // event.waitUntil(clients.matchAll().then(function (clientList) {
-    //     for (var i = 0; i < clientList.length; i++) {
-    //         console.log(client.url);
-    //         var client = clientList[i];
-    //         if (client.url == '/#' && 'focus' in client)
-    //             return client.focus();
-    //     }
-    // }));
+    event.waitUntil(sendClickToClient(event));
 });
+
+const sendBackgroundInfo = (data) => {
+    return clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true
+    })
+        .then((windowClients) => {
+
+            return Promise.all(
+                windowClients.map(client => {
+                    return client.postMessage({
+                        type: 'notification', // TEM QUE BATER COM A RECEPÇÃO NO CLIENT, CRIAR CONST
+                        additionalData: data
+                    });
+                })
+            );
+
+            // for (let i = 0; i < windowClients.length; i++) {
+            //     const windowClient = windowClients[i];
+            //     windowClient.postMessage({
+            //         type: 'notificationBackground', // TEM QUE BATER COM A RECEPÇÃO NO CLIENT
+            //         additionalData: data
+            //     });
+            // }
+        });
+};
+
+const sendNotification = (payload) => {
+    if (payload.data.message || payload.data.title) {
+
+        // Customize notification here
+        const notificationTitle = payload.data.title || '';
+        const notificationOptions = {
+            data: Object.assign({}, payload.data),
+            tag: payload.data.notId,
+            body: payload.data.message || '',
+            icon: 'http://icons.iconarchive.com/icons/paomedia/small-n-flat/1024/sign-check-icon.png'
+        };
+
+        return self.registration.showNotification(notificationTitle, notificationOptions);
+    }
+}
+
+const sendClickToClient = (event) => {
+
+    return clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true
+    })
+        .then((windowClients) => {
+            const focusedClient = windowClients.find(client => client.focused);
+
+            if (!focusedClient) {
+                const visibleClient = windowClients.find(client => client.visibilityState === 'visible');
+                return visibleClient ? visibleClient.focus() : windowClients[0].focus();
+            }
+
+            return focusedClient;
+        })
+        .then((client) => {
+            return client.postMessage({
+                type: 'notificationClick', // TEM QUE BATER COM A RECEPÇÃO NO CLIENT, CRIAR CONST
+                additionalData: event.notification.data
+            })
+        })
+        .catch(console.error);
+}
+
+// function isClientFocused() {
+//     return clients.matchAll({
+//         type: 'window',
+//         includeUncontrolled: true
+//     })
+//         .then((windowClients) => {
+//             return windowClients.some(client => client.focused);
+
+//             // return windowClients.some(client => client.visibilityState === 'visible');
+
+//             // let clientIsFocused = false;
+
+//             // for (let i = 0; i < windowClients.length; i++) {
+//             //     const windowClient = windowClients[i];
+//             //     if (windowClient.focused) {
+//             //         clientIsFocused = true;
+//             //         break;
+//             //     }
+//             // }
+
+//             // return clientIsFocused;
+//         });
+// }
+
+// messaging.setBackgroundMessageHandler(function (payload) {
+
+//     console.log('recebeu mensagem em background.');
+//     // Envia os dados para todos os clients abertos
+//     sendBackgroundInfo(payload.data);
+
+//     if (payload.data.message || payload.data.title) {
+//         // Customize notification here
+//         const notificationTitle = payload.data.title || '';
+//         const notificationOptions = {
+//             data: Object.assign({}, payload.data),
+//             tag: payload.data.notId,
+//             body: payload.data.message || '',
+//             icon: 'http://icons.iconarchive.com/icons/paomedia/small-n-flat/1024/sign-check-icon.png'
+//         };
+
+//         return self.registration.showNotification(notificationTitle, notificationOptions);
+//     }
+// });
