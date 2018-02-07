@@ -6,6 +6,9 @@ https://developers.google.com/web/fundamentals/push-notifications/permission-ux?
 ## Referências
 
 Medium com explicação básica
+https://medium.com/step-up-labs/our-experience-with-firebase-cloud-messaging-318043e667e3
+
+Medium com explicação básica do firebase messaging
 https://www.sentinelstand.com/article/handling-firebase-notification-messages-in-your-web-app
 
 Configuração inicial do firebase messaging JS
